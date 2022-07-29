@@ -171,9 +171,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         .flag("-Wno-unused-command-line-argument")
         .clone();
 
-    // determine target
-    let target = env::var_os("TARGET");
-    let cx_makefile = match target.clone().unwrap().to_str().unwrap() {
+    // determine target device
+    // This is specified via --cfg target_device="nanox"
+    // The value we get here is "nanox,none"
+    let target_device = env::var_os("CARGO_CFG_TARGET_DEVICE");
+    let cx_makefile = match target_device.clone().unwrap().to_str().unwrap().split(",").next().unwrap() {
         "nanos" => finalize_nanos_configuration(&mut command, &bolos_sdk),
         "nanox" => finalize_nanox_configuration(&mut command, &bolos_sdk),
         "nanosplus" => finalize_nanosplus_configuration(&mut command, &bolos_sdk),
@@ -211,7 +213,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // extend the library search path
     println!("cargo:rustc-link-search={}", out_dir.display());
     // copy
-    let linkerscript = match target.unwrap().to_str().unwrap() {
+    let linkerscript = match target_device.clone().unwrap().to_str().unwrap().split(",").next().unwrap() {
         "nanos" => "nanos_layout.ld",
         "nanox" => "nanox_layout.ld",
         "nanosplus" => "nanosplus_layout.ld",
