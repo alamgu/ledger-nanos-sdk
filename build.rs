@@ -217,7 +217,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         "nanosplus" => "nanosplus_layout.ld",
         _ => "",
     };
-    std::fs::copy(linkerscript, out_dir.join(linkerscript))?;
+    std::fs::copy(linkerscript, out_dir.join("device_layout.ld"))?;
     std::fs::copy("link.ld", out_dir.join("link.ld"))?;
     Ok(())
 }
