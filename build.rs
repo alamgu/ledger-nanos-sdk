@@ -1,6 +1,5 @@
 extern crate cc;
 use std::path::PathBuf;
-use std::process::Command;
 use std::{env, error::Error, fs::File, io::Read};
 
 fn finalize_nanos_configuration(command: &mut cc::Build, bolos_sdk: &String) -> String {
