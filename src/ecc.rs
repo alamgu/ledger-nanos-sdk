@@ -25,6 +25,7 @@ pub enum CurvesId {
     Invalid,
 }
 
+#[derive(Debug)]
 pub enum CxError {
     Carry,
     Locked,
@@ -139,10 +140,11 @@ pub struct ECCKeyRaw {
 /// the correct call. ECDSA for example cannot be used for Edwards'
 /// curves, we have to use EdDSA instead.
 #[repr(C)]
+#[derive(Clone)]
 pub struct ECPrivateKey<const N: usize, const TY: char> {
-    curve: CurvesId,
-    keylength: usize,
-    key: [u8; N],
+    pub curve: CurvesId,
+    pub keylength: usize,
+    pub key: [u8; N],
 }
 
 /// Represents a public key, its layout matching the C SDK's `cx_ecfp_public_key_t` type.
@@ -159,10 +161,11 @@ pub struct ECPrivateKey<const N: usize, const TY: char> {
 /// let public_key = sk.public_key();
 /// ```
 #[repr(C)]
+#[derive(Clone)]
 pub struct ECPublicKey<const S: usize, const TY: char> {
-    curve: CurvesId,
-    keylength: usize,
-    pubkey: [u8; S],
+    pub curve: CurvesId,
+    pub keylength: usize,
+    pub pubkey: [u8; S],
 }
 
 impl<const N: usize, const TY: char> Default for ECPrivateKey<N, TY> {
