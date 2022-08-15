@@ -240,7 +240,7 @@ int bagl_draw_string(unsigned short font_id, unsigned int fgcolor, unsigned int 
   colors[1] = fgcolor;
   unsigned int ch = 0;
   unsigned int bpp;
-  const unsigned char *txt = text;
+  const unsigned char *txt = pic(text);
 
   const bagl_font_t *font = bagl_get_font(font_id);
   if (font == NULL) {
@@ -629,7 +629,7 @@ idx_ok:
 
       if (context && context_length) {
         // compute with some margin to fit other characters and check if ellipsis algorithm is required
-        strwidth = bagl_compute_line_width(component->font_id, component->width+100, context, context_length, context_encoding);
+        strwidth = bagl_compute_line_width(component->font_id, component->width+100, pic(context), context_length, context_encoding);
         ellipsis_1_len = context_length;
 
 #ifdef HAVE_BAGL_ELLIPSIS
@@ -731,7 +731,7 @@ idx_ok:
       }
 
       if ((type == BAGL_LABEL) || (type == BAGL_LABELINE)) {
-        /*if (component->fill == BAGL_FILL)*/ {
+        if (component->fill == BAGL_FILL) {
           bagl_hal_draw_rect(component->bgcolor,
                              component->x, component->y-(type==BAGL_LABELINE?(baseline):0),
                              component->width, (type==BAGL_LABELINE? height_to_draw : component->height));
@@ -910,9 +910,9 @@ idx_ok:
                                          glyph->width,
                                          glyph->height,
                                          context_length,
-                                         (unsigned int*)context, // Endianness remarkably ignored !
+                                         pic((unsigned int*)context), // Endianness remarkably ignored !
                                          glyph->bits_per_pixel,
-                                         glyph->bitmap,
+                                         pic(glyph->bitmap),
                                          glyph->bits_per_pixel*(glyph->width*glyph->height));
       }
       else {
