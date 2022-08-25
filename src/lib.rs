@@ -9,7 +9,7 @@
 
 pub mod bindings;
 
-#[cfg(nanox)]
+#[cfg(target_os = "nanox")]
 pub mod ble;
 
 pub mod buttons;
