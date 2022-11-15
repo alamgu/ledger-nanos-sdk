@@ -13,6 +13,16 @@ SECTIONS
     _etext = .;
   } > FLASH
 
+  .data : ALIGN(4)
+  {
+    _data = .;
+    *(vtable)
+    *(.data*)
+    _edata = .;
+    _data_len = ABSOLUTE(_edata) - ABSOLUTE(_data);
+  } > SRAM AT > FLASH
+  _sidata = LOADADDR(.data);
+
   .nvm_data : ALIGN(PAGE_SIZE)
   {
     _nvram_data = .;
@@ -23,21 +33,12 @@ SECTIONS
     _nvram_end = .;
   } > FLASH 
 
-  .data : ALIGN(4)
-  {
-    _data = .;
-    *(vtable)
-    *(.data*)
-    _edata = .;
-  } > SRAM
-
-  ASSERT( (_edata - _data) <= 0, ".data section must be empty" )
-
    .bss :
   {
     _bss = .;
     *(.bss*)
     _ebss = .;
+    _bss_len = ABSOLUTE(_ebss) - ABSOLUTE(_bss);
 
     . = ALIGN(4);
     app_stack_canary = .;
