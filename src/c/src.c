@@ -14,6 +14,12 @@ void os_longjmp(unsigned int exception) {
   longjmp(try_context_get()->jmp_buf, exception);
 }
 
+extern char _data[];
+extern void* _data_len;
+extern char _sidata[];
+extern char _bss[];
+extern void* _bss_len;
+
 io_seph_app_t G_io_app;
 
 int c_main(void) {
@@ -56,6 +62,11 @@ int c_main(void) {
     #ifdef HAVE_BLE 
         LEDGER_BLE_init();
     #endif
+
+	// Yes, the length is the _address_ of _data_len, becuase it's the definition of the symbol at link time.
+	memset(&_bss, 0, (int) &_bss_len);
+	memcpy(&_data, &_sidata, (int) &_data_len);
+
         sample_main();
       }
       CATCH(EXCEPTION_IO_RESET) {

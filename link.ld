@@ -9,12 +9,26 @@ SECTIONS
     *(.text*)
     *(.rodata*) 
 
-    . = ALIGN(PAGE_SIZE);
     _etext = .;
   } > FLASH
 
+  .data : ALIGN(4)
+  {
+    _data = .;
+    *(vtable)
+    *(.data*)
+    _edata = .;
+    _data_len = ABSOLUTE(_edata) - ABSOLUTE(_data);
+    FILL(0xa4a4);
+    /* Calculate padding so that .text + .data is a multiple of 64, as they
+     * will be concatenated into flash for the app image. */
+    . += (64 - (ABSOLUTE(_etext) - ABSOLUTE(_text) + ABSOLUTE(_edata) - ABSOLUTE(_data)) % 64) % 64;
+  } > SRAM AT > FLASH
+  _sidata = LOADADDR(.data);
+
   .nvm_data : ALIGN(PAGE_SIZE)
   {
+    . = ALIGN(PAGE_SIZE);
     _nvram_data = .;
     *(.nvm_data*)
     . = ALIGN(PAGE_SIZE);
@@ -23,21 +37,12 @@ SECTIONS
     _nvram_end = .;
   } > FLASH 
 
-  .data : ALIGN(4)
-  {
-    _data = .;
-    *(vtable)
-    *(.data*)
-    _edata = .;
-  } > SRAM
-
-  ASSERT( (_edata - _data) <= 0, ".data section must be empty" )
-
    .bss :
   {
     _bss = .;
     *(.bss*)
     _ebss = .;
+    _bss_len = ABSOLUTE(_ebss) - ABSOLUTE(_bss);
 
     . = ALIGN(4);
     app_stack_canary = .;
@@ -59,6 +64,7 @@ SECTIONS
     libm.a ( * )
     libgcc.a ( * )
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+    *(.ARM.extab*)
     *(.debug_info)
   }
 }
