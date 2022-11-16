@@ -9,7 +9,6 @@ SECTIONS
     *(.text*)
     *(.rodata*) 
 
-    . = ALIGN(PAGE_SIZE);
     _etext = .;
   } > FLASH
 
@@ -20,11 +19,16 @@ SECTIONS
     *(.data*)
     _edata = .;
     _data_len = ABSOLUTE(_edata) - ABSOLUTE(_data);
+    FILL(0xa4a4);
+    /* Calculate padding so that .text + .data is a multiple of 64, as they
+     * will be concatenated into flash for the app image. */
+    . += (64 - (ABSOLUTE(_etext) - ABSOLUTE(_text) + ABSOLUTE(_edata) - ABSOLUTE(_data)) % 64) % 64;
   } > SRAM AT > FLASH
   _sidata = LOADADDR(.data);
 
   .nvm_data : ALIGN(PAGE_SIZE)
   {
+    . = ALIGN(PAGE_SIZE);
     _nvram_data = .;
     *(.nvm_data*)
     . = ALIGN(PAGE_SIZE);
@@ -60,6 +64,7 @@ SECTIONS
     libm.a ( * )
     libgcc.a ( * )
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+    *(.ARM.extab*)
     *(.debug_info)
   }
 }
