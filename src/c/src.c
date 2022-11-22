@@ -1,3 +1,4 @@
+#include <elf.h>
 #include "exceptions.h"
 #include "os_apilevel.h"
 #include "string.h"
@@ -19,12 +20,48 @@ extern void* _data_len;
 extern char _sidata[];
 extern char _bss[];
 extern void* _bss_len;
+extern void* _rodata;
+extern void* _rodata_len;
+extern void* _rodata_src;
 
 io_seph_app_t G_io_app;
+
+extern Elf32_Rel _relocs;
+extern Elf32_Rel _relocs_end;
+
+extern dbg_int(uint32_t len);
+extern dbg_mem(void* ptr, uint32_t len);
+
+void link_pass(void) {
+	uint32_t buf[16];
+	Elf32_Rel *reloc_cursor = pic(&_relocs);
+	Elf32_Rel *reloc_end = ((Elf32_Rel*)pic(&_relocs_end-1)) + 1;
+	if (reloc_cursor == reloc_end) return;
+	uint32_t offset = reloc_cursor->r_offset;
+
+	for(int i=0; i < (uint32_t) &_rodata_len; i+=64) {
+		int is_changed = 0;
+		memcpy(buf, &_rodata_src + i, 64);
+		// Update the pointers from the rodata_rela records
+		while(offset < (uint32_t) &_rodata+i+64 && reloc_cursor < reloc_end) {
+			if (offset) {
+				uint32_t word_offset = (offset - (uint32_t)(&_rodata+i)) / 16;
+				uint32_t old = buf[word_offset];
+				uint32_t new = pic(old);
+				is_changed |= (old != new);
+				buf[word_offset] = new;
+				reloc_cursor++;
+				if ( reloc_cursor < reloc_end ) offset = reloc_cursor->r_offset;
+			} else { break; }
+		}
+		if(is_changed) nvm_write(&_rodata+i, buf, 64);
+	}
+}
 
 int c_main(void) {
   __asm volatile("cpsie i");
 
+  // dbg_str("BOOTING\n", 8);
   // formerly known as 'os_boot()'
   try_context_set(NULL);
 
@@ -62,6 +99,9 @@ int c_main(void) {
     #ifdef HAVE_BLE 
         LEDGER_BLE_init();
     #endif
+
+	dbg_str("LINKING\n", 8);
+	link_pass();
 
 	// Yes, the length is the _address_ of _data_len, becuase it's the definition of the symbol at link time.
 	memset(&_bss, 0, (int) &_bss_len);

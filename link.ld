@@ -1,3 +1,12 @@
+/*PHDRS
+{
+	headers PT_PHDR PHDRS ;
+	text PT_LOAD PHDRS ;
+	data PT_LOAD ;
+	sram PT_LOAD ;
+}
+*/
+
 SECTIONS
 {
   .text :
@@ -7,10 +16,10 @@ SECTIONS
 
     *(.boot*)
     *(.text*)
-    *(.rodata*) 
 
     _etext = .;
-  } > FLASH
+  } > FLASH :text
+  
 
   .data : ALIGN(4)
   {
@@ -23,19 +32,24 @@ SECTIONS
     /* Calculate padding so that .text + .data is a multiple of 64, as they
      * will be concatenated into flash for the app image. */
     . += (64 - (ABSOLUTE(_etext) - ABSOLUTE(_text) + ABSOLUTE(_edata) - ABSOLUTE(_data)) % 64) % 64;
-  } > SRAM AT > FLASH
+  } > SRAM AT > FLASH :data
   _sidata = LOADADDR(.data);
 
   .nvm_data : ALIGN(PAGE_SIZE)
   {
     . = ALIGN(PAGE_SIZE);
+    _rodata = .;
+    _rodata_src = .;
+    *(.rodata*)
+    . = ALIGN(PAGE_SIZE);
+    _erodata = .;
+    _rodata_len = ABSOLUTE(_erodata) - ABSOLUTE(_rodata);
     _nvram_data = .;
     *(.nvm_data*)
-    . = ALIGN(PAGE_SIZE);
     _envram_data = .;
+    . = ALIGN(PAGE_SIZE);
     _install_parameters = .;
-    _nvram_end = .;
-  } > FLASH 
+  } > FLASH :text
 
    .bss :
   {
@@ -51,12 +65,31 @@ SECTIONS
     . = _stack_validation + STACK_SIZE;
     _stack = ABSOLUTE(END_STACK) - STACK_SIZE;
     _estack = ABSOLUTE(END_STACK);
-  } > SRAM
+  } > SRAM :sram
+  
+  .rel_flash : ALIGN(PAGE_SIZE) {
+	  . = ALIGN(PAGE_SIZE);
+	  _relocs = .;
+	  . += 0x1800; /* Magic constant to make size in the binary */
+	  /*(.rel.rodata .rel.rodata*)*/
+	  . = ALIGN(PAGE_SIZE);
+	  _relocs_end = .;
+	  _nvram_end = .;
+  } > FLASH :text /* > SRAM /* > FLASH */
 
   .stack_sizes (INFO):
   {
     KEEP(*(.stack_sizes));
-  }
+  } :NONE
+
+  /*
+  .rel (INFO):
+  {
+    KEEP(*(.rel.*));
+  } :NONE
+  */
+
+
 
   /DISCARD/ :
   {
@@ -65,7 +98,7 @@ SECTIONS
     libgcc.a ( * )
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
     *(.ARM.extab*)
-    *(.debug_info)
+    /* *(.debug_info) */
   }
 }
 
