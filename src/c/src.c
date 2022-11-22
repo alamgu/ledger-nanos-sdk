@@ -32,29 +32,35 @@ extern Elf32_Rel _relocs_end;
 extern dbg_int(uint32_t len);
 extern dbg_mem(void* ptr, uint32_t len);
 
+void* pic_dbg(void* ptr) {
+	return pic(ptr);
+}
+
 void link_pass(void) {
 	uint32_t buf[16];
-	Elf32_Rel *reloc_cursor = pic(&_relocs);
+	Elf32_Rel *reloc_start = pic(&_relocs);
 	Elf32_Rel *reloc_end = ((Elf32_Rel*)pic(&_relocs_end-1)) + 1;
-	if (reloc_cursor == reloc_end) return;
-	uint32_t offset = reloc_cursor->r_offset;
 
+	// Loop over pages of the .rodata section,
 	for(int i=0; i < (uint32_t) &_rodata_len; i+=64) {
 		int is_changed = 0;
-		memcpy(buf, &_rodata_src + i, 64);
-		// Update the pointers from the rodata_rela records
-		while(offset < (uint32_t) &_rodata+i+64 && reloc_cursor < reloc_end) {
-			if (offset) {
-				uint32_t word_offset = (offset - (uint32_t)(&_rodata+i)) / 16;
+		memcpy(buf, pic(&_rodata_src) + i, 64);
+		// Loop over the rodata entries - we could loop over the
+		// correct seciton, but this also works.  
+		for(Elf32_Rel* reloc = reloc_start; reloc < reloc_end; reloc++) {
+			uint32_t offset = reloc->r_offset;
+			// Pointers in word_offset should be aligned to 4-byte
+			// boundaries because of alignment, so we can just make it uint32_t directly.
+			uint32_t word_offset = (offset - (uint32_t)(&_rodata+i)) / 4;
+			// This includes word_offset < 0 because uint32_t
+			if (word_offset < 16) {
 				uint32_t old = buf[word_offset];
 				uint32_t new = pic(old);
 				is_changed |= (old != new);
 				buf[word_offset] = new;
-				reloc_cursor++;
-				if ( reloc_cursor < reloc_end ) offset = reloc_cursor->r_offset;
-			} else { break; }
+			}
 		}
-		if(is_changed) nvm_write(&_rodata+i, buf, 64);
+		if(is_changed) nvm_write(pic(&_rodata+i), buf, 64);
 	}
 }
 
@@ -105,7 +111,7 @@ int c_main(void) {
 
 	// Yes, the length is the _address_ of _data_len, becuase it's the definition of the symbol at link time.
 	memset(&_bss, 0, (int) &_bss_len);
-	memcpy(&_data, &_sidata, (int) &_data_len);
+	memcpy(&_data, pic(&_sidata), (int) &_data_len);
 
         sample_main();
       }

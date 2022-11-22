@@ -16,6 +16,7 @@ SECTIONS
 
     *(.boot*)
     *(.text*)
+    /* .rodata is moved to nvm_data so we can update it */
 
     _etext = .;
   } > FLASH :text
@@ -38,13 +39,14 @@ SECTIONS
   .nvm_data : ALIGN(PAGE_SIZE)
   {
     . = ALIGN(PAGE_SIZE);
+    /* Moved here from .text so we can update it with nvm_write() */
+    _nvram_data = .;
     _rodata = .;
     _rodata_src = .;
     *(.rodata*)
     . = ALIGN(PAGE_SIZE);
     _erodata = .;
     _rodata_len = ABSOLUTE(_erodata) - ABSOLUTE(_rodata);
-    _nvram_data = .;
     *(.nvm_data*)
     _envram_data = .;
     . = ALIGN(PAGE_SIZE);
