@@ -88,6 +88,13 @@ void link_pass(void) {
 int c_main(void) {
   __asm volatile("cpsie i");
 
+  // Update pointers for pic(), only issuing nvm_write() if we actually changed a pointer in the block.
+  link_pass();
+  // Yes, the length is the _address_ of _data_len, becuase it's the definition of the symbol at link time.
+  memcpy(&_data, pic(&_sidata), (int) &_data_len);
+  // Also clear the bss section to zeroes, so rust gets it's expected pattern.
+  memset(&_bss, 0, (int) &_bss_len);
+
   // formerly known as 'os_boot()'
   try_context_set(NULL);
 
@@ -125,12 +132,6 @@ int c_main(void) {
     #ifdef HAVE_BLE 
         LEDGER_BLE_init();
     #endif
-
-	link_pass();
-
-	// Yes, the length is the _address_ of _data_len, becuase it's the definition of the symbol at link time.
-	memset(&_bss, 0, (int) &_bss_len);
-	memcpy(&_data, pic(&_sidata), (int) &_data_len);
 
         sample_main();
       }
