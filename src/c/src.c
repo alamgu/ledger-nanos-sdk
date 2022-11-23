@@ -1,4 +1,5 @@
 #include <elf.h>
+#include <stdbool.h>
 #include "exceptions.h"
 #include "os_apilevel.h"
 #include "string.h"
@@ -16,21 +17,24 @@ void os_longjmp(unsigned int exception) {
 }
 
 extern char _data[];
-extern void* _data_len;
+extern void _data_len;
 extern char _sidata[];
 extern char _bss[];
-extern void* _bss_len;
-extern void* _rodata;
-extern void* _rodata_len;
-extern void* _rodata_src;
+extern void _bss_len;
+extern void _rodata;
+extern void _rodata_len;
+extern void _rodata_src;
 
 io_seph_app_t G_io_app;
 
 extern Elf32_Rel _relocs;
 extern Elf32_Rel _relocs_end;
 
-extern dbg_int(uint32_t len);
-extern dbg_mem(void* ptr, uint32_t len);
+extern void dbg_int(uint32_t len);
+extern void dbg_mem(void* ptr, uint32_t len);
+
+// TODO get from header
+void *pic(void *link_address);
 
 void* pic_dbg(void* ptr) {
 	return pic(ptr);
@@ -38,29 +42,53 @@ void* pic_dbg(void* ptr) {
 
 void link_pass(void) {
 	uint32_t buf[16];
+	typedef typeof(*buf) addrdiff_t;
+	typedef typeof(*buf) load_addr_t;
+	typedef typeof(*buf) run_addr_t;
+
 	Elf32_Rel *reloc_start = pic(&_relocs);
 	Elf32_Rel *reloc_end = ((Elf32_Rel*)pic(&_relocs_end-1)) + 1;
 
 	// Loop over pages of the .rodata section,
-	for(int i=0; i < (uint32_t) &_rodata_len; i+=64) {
-		int is_changed = 0;
-		memcpy(buf, pic(&_rodata_src) + i, 64);
+	for (addrdiff_t i = 0; i < (addrdiff_t)&_rodata_len; i += sizeof(buf)) {
+		// We will want to know if we changed each page, to avoid extra write-backs.
+		bool is_changed = 0;
+
+		// Copy over page from *run time* address.
+		memcpy(buf, pic(&_rodata_src) + i, sizeof(buf));
+
+		// This is the elf load (*not* elf link or bolos run time!) address of the page
+		// we just copied.
+		load_addr_t page_load_addr = (load_addr_t)&_rodata + i;
+
 		// Loop over the rodata entries - we could loop over the
-		// correct seciton, but this also works.  
-		for(Elf32_Rel* reloc = reloc_start; reloc < reloc_end; reloc++) {
-			uint32_t offset = reloc->r_offset;
+		// correct seciton, but this also works.
+		for (Elf32_Rel* reloc = reloc_start; reloc < reloc_end; reloc++) {
+			// This is the (absolute) elf *load* address of the relocation.
+			load_addr_t abs_offset = reloc->r_offset;
+
+			// This is the relative offset on the current page, in
+			// bytes.
+			addrdiff_t page_offset = abs_offset - page_load_addr;
+
+			// This is the relative offset on the current page, in words.
+			//
 			// Pointers in word_offset should be aligned to 4-byte
-			// boundaries because of alignment, so we can just make it uint32_t directly.
-			uint32_t word_offset = (offset - (uint32_t)(&_rodata+i)) / 4;
+			// boundaries because of alignment, so we can just make it
+			// uint32_t directly.
+			size_t word_offset = page_offset / sizeof(*buf);
+
 			// This includes word_offset < 0 because uint32_t
-			if (word_offset < 16) {
-				uint32_t old = buf[word_offset];
-				uint32_t new = pic(old);
+			if (word_offset < sizeof(buf) / sizeof(*buf)) {
+				load_addr_t old = buf[word_offset];
+				run_addr_t new = pic(old);
 				is_changed |= (old != new);
 				buf[word_offset] = new;
 			}
 		}
-		if(is_changed) nvm_write(pic(&_rodata+i), buf, 64);
+		if (is_changed) {
+			nvm_write(pic(&_rodata+i), buf, 64);
+		}
 	}
 }
 

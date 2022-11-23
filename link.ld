@@ -72,7 +72,7 @@ SECTIONS
   .rel_flash : ALIGN(PAGE_SIZE) {
 	  . = ALIGN(PAGE_SIZE);
 	  _relocs = .;
-	  . += 0x1800; /* Magic constant to make size in the binary */
+	  . += 7 * 0x400; /* 7 KiB, Magic constant to make size in the binary */
 	  /*(.rel.rodata .rel.rodata*)*/
 	  . = ALIGN(PAGE_SIZE);
 	  _relocs_end = .;
