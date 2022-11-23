@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rust-lld "$@"
+${LD:rust-ldd} "$@"
 
 echo RUST_LLD DONE
 
