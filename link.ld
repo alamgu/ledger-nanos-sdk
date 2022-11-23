@@ -20,7 +20,7 @@ SECTIONS
 
     _etext = .;
   } > FLASH :text
-  
+
 
   .data : ALIGN(4)
   {

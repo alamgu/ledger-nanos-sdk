@@ -30,15 +30,8 @@ io_seph_app_t G_io_app;
 extern Elf32_Rel _relocs;
 extern Elf32_Rel _relocs_end;
 
-extern void dbg_int(uint32_t len);
-extern void dbg_mem(void* ptr, uint32_t len);
-
 // TODO get from header
 void *pic(void *link_address);
-
-void* pic_dbg(void* ptr) {
-	return pic(ptr);
-}
 
 void link_pass(void) {
 	uint32_t buf[16];
@@ -95,7 +88,6 @@ void link_pass(void) {
 int c_main(void) {
   __asm volatile("cpsie i");
 
-  // dbg_str("BOOTING\n", 8);
   // formerly known as 'os_boot()'
   try_context_set(NULL);
 
@@ -134,7 +126,6 @@ int c_main(void) {
         LEDGER_BLE_init();
     #endif
 
-	dbg_str("LINKING\n", 8);
 	link_pass();
 
 	// Yes, the length is the _address_ of _data_len, becuase it's the definition of the symbol at link time.
