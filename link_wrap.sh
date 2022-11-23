@@ -2,9 +2,9 @@
 
 set -eu
 
-LD=${LD:-rust-ldd}
+LD=${LD:-rust-lld}
 # Needed because LLD gets behavior from argv[0]
-LD=${LD/ld/lld}
+LD=${LD/-ld/-lld}
 ${LD} "$@"
 
 echo RUST_LLD DONE
