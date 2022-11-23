@@ -291,5 +291,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     std::fs::copy(linkerscript, out_dir.join(linkerscript))?;
     std::fs::copy("link.ld", out_dir.join("link.ld"))?;
+    std::fs::copy("link_wrap.sh", out_dir.join("link_wrap.sh"))?;
     Ok(())
 }
