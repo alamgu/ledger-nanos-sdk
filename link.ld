@@ -36,6 +36,15 @@ SECTIONS
   } > SRAM AT > FLASH :data
   _sidata = LOADADDR(.data);
 
+  .rel_flash : ALIGN(PAGE_SIZE) {
+	  . = ALIGN(PAGE_SIZE);
+	  _relocs = .;
+	  . += _reloc_size;
+	  /*(.rel.rodata .rel.rodata*)*/
+	  . = ALIGN(PAGE_SIZE);
+	  _relocs_end = .;
+  } > FLASH :text /* > SRAM /* > FLASH */
+
   .nvm_data : ALIGN(PAGE_SIZE)
   {
     . = ALIGN(PAGE_SIZE);
@@ -48,6 +57,7 @@ SECTIONS
     _erodata = .;
     _rodata_len = ABSOLUTE(_erodata) - ABSOLUTE(_rodata);
     *(.nvm_data*)
+    _nvram_end = .;
     _envram_data = .;
     . = ALIGN(PAGE_SIZE);
     _install_parameters = .;
@@ -69,15 +79,6 @@ SECTIONS
     _estack = ABSOLUTE(END_STACK);
   } > SRAM :sram
   
-  .rel_flash : ALIGN(PAGE_SIZE) {
-	  . = ALIGN(PAGE_SIZE);
-	  _relocs = .;
-	  . += 7 * 0x400; /* 7 KiB, Magic constant to make size in the binary */
-	  /*(.rel.rodata .rel.rodata*)*/
-	  . = ALIGN(PAGE_SIZE);
-	  _relocs_end = .;
-	  _nvram_end = .;
-  } > FLASH :text /* > SRAM /* > FLASH */
 
   .stack_sizes (INFO):
   {
