@@ -1,59 +1,102 @@
-/*PHDRS
+PHDRS
 {
-	headers PT_PHDR PHDRS ;
-	text PT_LOAD PHDRS ;
-	data PT_LOAD ;
-	sram PT_LOAD ;
+    flash0 PT_LOAD ;
+    data   PT_LOAD ;
+    flash2 PT_LOAD ;
+    sram PT_LOAD ;
+
+    headers PT_PHDR PHDRS ;
 }
-*/
 
 SECTIONS
 {
+  /* Code, read only, no relocations needed. */
   .text :
   {
-    _text = .;
+    /* Here begins flash. This symbol is used by the ideompotent `pic`
+       function as the lower bound of addressed to relocate. */
     _nvram_start = .;
+
+    _text = .;
 
     *(.boot*)
     *(.text*)
-    /* .rodata is moved to nvm_data so we can update it */
+    /* .rodata is moved out so we can update it */
 
     _etext = .;
-  } > FLASH :text
+  } > FLASH :flash0
+  _text_len = _etext - _text;
 
-
-  .data : ALIGN(4)
+  /* Relocations, read only, no relocations aginst the relocations themselves
+     needed! */
+  .rel_flash : ALIGN(4)
   {
-    _data = .;
-    *(vtable)
-    *(.data*)
-    _edata = .;
-    _data_len = ABSOLUTE(_edata) - ABSOLUTE(_data);
-    FILL(0xa4a4);
-    /* Calculate padding so that .text + .data is a multiple of 64, as they
-     * will be concatenated into flash for the app image. */
-    . += (64 - (ABSOLUTE(_etext) - ABSOLUTE(_text) + ABSOLUTE(_edata) - ABSOLUTE(_data)) % 64) % 64;
-  } > SRAM AT > FLASH :data
-  _sidata = LOADADDR(.data);
+    _relocs = .;
 
-  .nvm_data : ALIGN(PAGE_SIZE)
-  {
-    . = ALIGN(PAGE_SIZE);
-    /* Moved here from .text so we can update it with nvm_write() */
+    . += 7 * 0x400; /* 7 KiB, Magic constant to make size in the binary */
+    /*(.rel.rodata .rel.rodata*)*/
+    /*(.rel.data .rel.data*)*/
+    /*(.rel.nvm_data .rel.nvm_data*)*/
+
+    _erelocs = .;
+
+    /* After this section we have mutable flash. */
     _nvram_data = .;
+  } > FLASH :flash0
+  _relocs_len = _erelocs - _relocs;
+
+  /* Immutable globals, read only during app running proper, but
+     relocations are needed. (So not read-only completely.) */
+  .rodata : ALIGN(PAGE_SIZE)
+  {
+    /* Moved here from .text so we can permantly apply relocations to it with
+       nvm_write() */
     _rodata = .;
     _rodata_src = .;
     *(.rodata*)
     . = ALIGN(PAGE_SIZE);
     _erodata = .;
-    _rodata_len = ABSOLUTE(_erodata) - ABSOLUTE(_rodata);
-    *(.nvm_data*)
-    _envram_data = .;
-    . = ALIGN(PAGE_SIZE);
-    _install_parameters = .;
-  } > FLASH :text
+  } > FLASH :flash0
+  _rodata_len = _erodata - _rodata;
 
-   .bss :
+  /* Mutable Globals, writable, relocations are needed. */
+  .data : ALIGN(PAGE_SIZE)
+  {
+    _data = .;
+    *(vtable)
+    *(.data*)
+    . = ALIGN(PAGE_SIZE);
+    _edata = .;
+    FILL(0xa4a4);
+  } > SRAM AT> FLASH :data =0xa4a4
+  _data_len = _edata - _data;
+
+  /* Persistent data, read and written during app running proper,
+     relocations are also needed. */
+  .nvm_data : ALIGN(PAGE_SIZE)
+  {
+    _nvm_data = .;
+    _nvm_data_src = .;
+    *(.nvm_data*)
+    . = ALIGN(PAGE_SIZE);
+    _envm_data = .;
+
+    _install_parameters = .;
+
+    /* After this section we no longer have Flash memory at all. */
+
+    /* This symbol is used by the mutable portion of flash calculations. */
+    _envram_data = .;
+    /* This symbol is used by the ideompotent `pic` function as the upper
+       bound of addressed to relocate. */
+    _nvram_end = .;
+  } > FLASH :flash2
+  _nvm_data_len = _envm_data - _nvm_data;
+
+  _sidata = LOADADDR(.data);
+  _sidata_src = LOADADDR(.data);
+
+  .bss :
   {
     _bss = .;
     *(.bss*)
@@ -68,16 +111,6 @@ SECTIONS
     _stack = ABSOLUTE(END_STACK) - STACK_SIZE;
     _estack = ABSOLUTE(END_STACK);
   } > SRAM :sram
-  
-  .rel_flash : ALIGN(PAGE_SIZE) {
-	  . = ALIGN(PAGE_SIZE);
-	  _relocs = .;
-	  . += 7 * 0x400; /* 7 KiB, Magic constant to make size in the binary */
-	  /*(.rel.rodata .rel.rodata*)*/
-	  . = ALIGN(PAGE_SIZE);
-	  _relocs_end = .;
-	  _nvram_end = .;
-  } > FLASH :text /* > SRAM /* > FLASH */
 
   .stack_sizes (INFO):
   {
@@ -90,8 +123,6 @@ SECTIONS
     KEEP(*(.rel.*));
   } :NONE
   */
-
-
 
   /DISCARD/ :
   {

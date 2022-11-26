@@ -18,13 +18,13 @@ OUT="$2"
 echo OUT IS $OUT
 
 # the relocations for the constants section are required
-${OBJCOPY} --dump-section .rel.nvm_data=provenance-reloc-2 $OUT provenance-reloc
-# there might not _be_ a nonempty .data section, so there might be no relocations for it; fail gracefully.
-${OBJCOPY} --dump-section .rel.data=provenance-reloc-3 $OUT provenance-reloc || true
-# Concatenate the relocation sections; this should still write provenance-reloc-4 even if provenance-reloc-3 doesn't exist.
-cat provenance-reloc-2 provenance-reloc-3 > provenance-reloc-4 || true
+${OBJCOPY} --dump-section .rel.rodata=app-reloc-2 $OUT app-reloc
+# there might not _be_ nonempty .data or .nvm_data sections, so there might be no relocations for it; fail gracefully.
+${OBJCOPY} --dump-section .rel.data=app-reloc-3 $OUT app-reloc || true
+${OBJCOPY} --dump-section .rel.nvm_data=app-reloc-4 $OUT app-reloc || true
+# Concatenate the relocation sections; this should still write app-reloc-4 even if app-reloc-3 doesn't exist.
+cat app-reloc-2 app-reloc-3 app-reloc-4 > app-reloc-concat || true
 # pad the relocs out to size - we should probably make some way to adjust this size from the source.
-truncate -s 7K provenance-reloc-4
+truncate -s 7K app-reloc-concat
 # and write the relocs to their section in the flash image.
-${OBJCOPY} --update-section .rel_flash=provenance-reloc-4 $OUT
-
+${OBJCOPY} --update-section .rel_flash=app-reloc-concat $OUT

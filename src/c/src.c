@@ -16,53 +16,74 @@ void os_longjmp(unsigned int exception) {
   longjmp(try_context_get()->jmp_buf, exception);
 }
 
-extern char _data[];
-extern void _data_len;
-extern char _sidata[];
-extern char _bss[];
-extern void _bss_len;
-extern void _rodata;
-extern void _rodata_len;
-extern void _rodata_src;
+struct SectionSrc;
+struct SectionDst;
+struct SectionLen;
+
+extern struct SectionDst _rodata;
+extern struct SectionSrc _rodata_src;
+extern struct SectionLen _rodata_len;
+
+extern struct SectionDst _data;
+extern struct SectionLen _data_len;
+extern struct SectionDst _sidata;
+extern struct SectionSrc _sidata_src;
+
+extern struct SectionDst _nvm_data;
+extern struct SectionSrc _nvm_data_src;
+extern struct SectionLen _nvm_data_len;
+
+extern struct SectionDst _bss;
+extern struct SectionLen _bss_len;
 
 io_seph_app_t G_io_app;
 
 extern Elf32_Rel _relocs;
-extern Elf32_Rel _relocs_end;
+extern Elf32_Rel _erelocs;
 
 // TODO get from header
 void *pic(void *link_address);
+void nvm_write (void *dst_adr, void *src_adr, unsigned int src_len);
 
-void link_pass(void) {
+void link_pass(
+	struct SectionLen *sec_len_as_p,
+	struct SectionSrc *sec_src,
+	struct SectionDst *sec_dst)
+{
 	uint32_t buf[16];
-	typedef typeof(*buf) addrdiff_t;
-	typedef typeof(*buf) load_addr_t;
-	typedef typeof(*buf) run_addr_t;
+	typedef typeof(*buf) link_addr_t;
+	typedef typeof(*buf) install_addr_t;
 
 	Elf32_Rel *reloc_start = pic(&_relocs);
-	Elf32_Rel *reloc_end = ((Elf32_Rel*)pic(&_relocs_end-1)) + 1;
+	Elf32_Rel *reloc_end = ((Elf32_Rel*)pic(&_erelocs-1)) + 1;
+
+    size_t sec_len = (size_t)sec_len_as_p;
 
 	// Loop over pages of the .rodata section,
-	for (addrdiff_t i = 0; i < (addrdiff_t)&_rodata_len; i += sizeof(buf)) {
+	for (size_t i = 0; i < sec_len; i += sizeof(buf)) {
 		// We will want to know if we changed each page, to avoid extra write-backs.
 		bool is_changed = 0;
 
+		size_t buf_size = sec_len - i < sizeof(buf)
+			? sec_len - i
+			: sizeof(buf);
+
 		// Copy over page from *run time* address.
-		memcpy(buf, pic(&_rodata_src) + i, sizeof(buf));
+		memcpy(buf, pic(sec_src) + i, buf_size);
 
 		// This is the elf load (*not* elf link or bolos run time!) address of the page
 		// we just copied.
-		load_addr_t page_load_addr = (load_addr_t)&_rodata + i;
+		link_addr_t page_link_addr = (link_addr_t)sec_dst + i;
 
 		// Loop over the rodata entries - we could loop over the
 		// correct seciton, but this also works.
 		for (Elf32_Rel* reloc = reloc_start; reloc < reloc_end; reloc++) {
 			// This is the (absolute) elf *load* address of the relocation.
-			load_addr_t abs_offset = reloc->r_offset;
+			link_addr_t abs_offset = reloc->r_offset;
 
 			// This is the relative offset on the current page, in
 			// bytes.
-			addrdiff_t page_offset = abs_offset - page_load_addr;
+			size_t page_offset = abs_offset - page_link_addr;
 
 			// This is the relative offset on the current page, in words.
 			//
@@ -71,16 +92,17 @@ void link_pass(void) {
 			// uint32_t directly.
 			size_t word_offset = page_offset / sizeof(*buf);
 
-			// This includes word_offset < 0 because uint32_t
+			// This includes word_offset < 0 because uint32_t.
+			// Assuming no relocations go behind the end address.
 			if (word_offset < sizeof(buf) / sizeof(*buf)) {
-				load_addr_t old = buf[word_offset];
-				run_addr_t new = pic(old);
+				link_addr_t old = buf[word_offset];
+				install_addr_t new = pic(old);
 				is_changed |= (old != new);
 				buf[word_offset] = new;
 			}
 		}
 		if (is_changed) {
-			nvm_write(pic(&_rodata+i), buf, 64);
+			nvm_write(pic((void *)sec_dst + i), buf, 64);
 		}
 	}
 }
@@ -89,11 +111,13 @@ int c_main(void) {
   __asm volatile("cpsie i");
 
   // Update pointers for pic(), only issuing nvm_write() if we actually changed a pointer in the block.
-  link_pass();
+  link_pass(&_rodata_len, &_rodata_src, &_rodata);
+  link_pass(&_data_len, &_sidata_src, &_sidata);
+  link_pass(&_nvm_data_len, &_nvm_data_src, &_nvm_data);
   // Yes, the length is the _address_ of _data_len, becuase it's the definition of the symbol at link time.
-  memcpy(&_data, pic(&_sidata), (int) &_data_len);
+  memcpy(&_data, pic(&_sidata), (size_t) &_data_len);
   // Also clear the bss section to zeroes, so rust gets it's expected pattern.
-  memset(&_bss, 0, (int) &_bss_len);
+  memset(&_bss, 0, (size_t) &_bss_len);
 
   // formerly known as 'os_boot()'
   try_context_set(NULL);
