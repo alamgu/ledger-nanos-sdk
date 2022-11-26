@@ -78,8 +78,7 @@ fn finalize_nanox_configuration(command: &mut cc::Build, bolos_sdk: &String) -> 
         .include(format!("{}/nanox/lib_cxng/include", bolos_sdk))
         .flag("-mno-movt")
         .flag("-ffixed-r9")
-        .flag("-fropi")
-        .flag("-frwpi");
+        .flag("-fropi");
     configure_lib_bagl(command, bolos_sdk);
     format!("{}/nanox/Makefile.conf.cx", bolos_sdk)
 }
@@ -103,8 +102,7 @@ fn finalize_nanosplus_configuration(command: &mut cc::Build, bolos_sdk: &String)
         ))
         .include(format!("{}/nanosplus/", bolos_sdk))
         .include(format!("{}/nanosplus/lib_cxng/include", bolos_sdk))
-        .flag("-fropi")
-        .flag("-frwpi");
+        .flag("-fropi");
     configure_lib_bagl(command, bolos_sdk);
     format!("{}/nanosplus/Makefile.conf.cx", bolos_sdk)
 }
