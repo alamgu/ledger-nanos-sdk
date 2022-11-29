@@ -29,14 +29,16 @@ SECTIONS
 
   /* Relocations, read only, no relocations aginst the relocations themselves
      needed! */
-  .rel_flash : ALIGN(4)
+  .rel_flash : ALIGN(PAGE_SIZE)
   {
     _relocs = .;
 
-    . += 7 * 0x400; /* 7 KiB, Magic constant to make size in the binary */
+    /* define _reloc_size in the build.rs */
+    . += _reloc_size;
     /*(.rel.rodata .rel.rodata*)*/
     /*(.rel.data .rel.data*)*/
     /*(.rel.nvm_data .rel.nvm_data*)*/
+    . = ALIGN(PAGE_SIZE);
 
     _erelocs = .;
 
