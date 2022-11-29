@@ -42,7 +42,9 @@ SECTIONS
 
     _erelocs = .;
 
-    /* After this section we have mutable flash. */
+    . = ALIGN(PAGE_SIZE);
+
+    /* After this section we have mutable flash. Must be a multiple of PAGE_SIZE from _nvram_start. */
     _nvram_data = .;
   } > FLASH :flash0
   _relocs_len = _erelocs - _relocs;
