@@ -39,6 +39,8 @@ SECTIONS
   .rel_flash : ALIGN(PAGE_SIZE) {
 	  . = ALIGN(PAGE_SIZE);
 	  _relocs = .;
+	  /* define _reloc_size in the build.rs but we have a default here */
+	  _reloc_size = ABSOLUTE(1024*7);
 	  . += _reloc_size;
 	  /*(.rel.rodata .rel.rodata*)*/
 	  . = ALIGN(PAGE_SIZE);

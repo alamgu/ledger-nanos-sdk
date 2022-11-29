@@ -32,7 +32,7 @@ if [ "$reloc_real_size" -gt "$reloc_allocated_size" ]
 then
 	echo "Insufficient size for relocs; increase it in build.rs."
 	echo "Available size: " $reloc_allocated_size " Used size: " $reloc_real_size
-	fail
+	exit 1
 else
 	echo "Sufficient size:" $reloc_allocated_size $reloc_real_size
 fi
