@@ -25,7 +25,6 @@ SECTIONS
 
     _etext = .;
   } > FLASH :flash0
-  _text_len = _etext - _text;
 
   /* Relocations, read only, no relocations aginst the relocations themselves
      needed! */
@@ -47,7 +46,6 @@ SECTIONS
     /* After this section we have mutable flash. Must be a multiple of PAGE_SIZE from _nvram_start. */
     _nvram_data = .;
   } > FLASH :flash0
-  _relocs_len = _erelocs - _relocs;
 
   /* Immutable globals, read only during app running proper, but
      relocations are needed. (So not read-only completely.) */
@@ -61,7 +59,6 @@ SECTIONS
     . = ALIGN(PAGE_SIZE);
     _erodata = .;
   } > FLASH :flash0
-  _rodata_len = _erodata - _rodata;
 
   /* Mutable Globals, writable, relocations are needed. */
   .data : ALIGN(PAGE_SIZE)
@@ -73,7 +70,6 @@ SECTIONS
     _edata = .;
     FILL(0xa4a4);
   } > SRAM AT> FLASH :data =0xa4a4
-  _data_len = _edata - _data;
 
   /* Persistent data, read and written during app running proper,
      relocations are also needed. */
@@ -95,9 +91,9 @@ SECTIONS
        bound of addressed to relocate. */
     _nvram_end = .;
   } > FLASH :flash2
-  _nvm_data_len = _envm_data - _nvm_data;
 
   _sidata = LOADADDR(.data);
+  _esidata = LOADADDR(.data) + (_edata - _data);
   _sidata_src = LOADADDR(.data);
 
   .bss :
@@ -105,7 +101,6 @@ SECTIONS
     _bss = .;
     *(.bss*)
     _ebss = .;
-    _bss_len = ABSOLUTE(_ebss) - ABSOLUTE(_bss);
 
     . = ALIGN(4);
     app_stack_canary = .;
@@ -135,7 +130,7 @@ SECTIONS
     libgcc.a ( * )
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
     *(.ARM.extab*)
-    /* *(.debug_info) */
+    *(.debug_info)
   }
 }
 

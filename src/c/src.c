@@ -18,23 +18,27 @@ void os_longjmp(unsigned int exception) {
 
 struct SectionSrc;
 struct SectionDst;
+struct SectionTop;
 struct SectionLen;
 
 extern struct SectionDst _rodata;
+extern struct SectionTop _erodata;
 extern struct SectionSrc _rodata_src;
-extern struct SectionLen _rodata_len;
 
 extern struct SectionDst _data;
-extern struct SectionLen _data_len;
+#if defined(TARGET_NANOX) || defined(TARGET_NANOS2)
+#elif defined(TARGET_NANOS)
 extern struct SectionDst _sidata;
+extern struct SectionTop _esidata;
+#endif
 extern struct SectionSrc _sidata_src;
 
 extern struct SectionDst _nvm_data;
+extern struct SectionTop _envm_data;
 extern struct SectionSrc _nvm_data_src;
-extern struct SectionLen _nvm_data_len;
 
 extern struct SectionDst _bss;
-extern struct SectionLen _bss_len;
+extern struct SectionTop _ebss;
 
 io_seph_app_t G_io_app;
 
@@ -46,9 +50,9 @@ void *pic(void *link_address);
 void nvm_write (void *dst_adr, void *src_adr, unsigned int src_len);
 
 void link_pass(
-	struct SectionLen *sec_len_as_p,
 	struct SectionSrc *sec_src,
-	struct SectionDst *sec_dst)
+	struct SectionDst *sec_dst,
+	struct SectionTop *sec_top)
 {
 	uint32_t buf[16];
 	typedef typeof(*buf) link_addr_t;
@@ -57,7 +61,7 @@ void link_pass(
 	Elf32_Rel *reloc_start = pic(&_relocs);
 	Elf32_Rel *reloc_end = ((Elf32_Rel*)pic(&_erelocs-1)) + 1;
 
-    size_t sec_len = (size_t)sec_len_as_p;
+    size_t sec_len = (void *)sec_top - (void *)sec_dst;
 
 	// Loop over pages of the .rodata section,
 	for (size_t i = 0; i < sec_len; i += sizeof(buf)) {
@@ -111,13 +115,15 @@ int c_main(void) {
   __asm volatile("cpsie i");
 
   // Update pointers for pic(), only issuing nvm_write() if we actually changed a pointer in the block.
-  link_pass(&_rodata_len, &_rodata_src, &_rodata);
-  link_pass(&_data_len, &_sidata_src, &_sidata);
-  link_pass(&_nvm_data_len, &_nvm_data_src, &_nvm_data);
-  // Yes, the length is the _address_ of _data_len, becuase it's the definition of the symbol at link time.
-  memcpy(&_data, pic(&_sidata), (size_t) &_data_len);
+  link_pass(&_rodata_src, &_rodata, &_erodata);
+#if defined(TARGET_NANOX) || defined(TARGET_NANOS2)
+#elif defined(TARGET_NANOS)
+  memcpy(&_data, pic(&_sidata), (size_t) ((void *)&_esidata - (void *)&_sidata));
+  link_pass(&_sidata_src, &_sidata, &_esidata);
+  link_pass(&_nvm_data_src, &_nvm_data, &_erodata);
+#endif
   // Also clear the bss section to zeroes, so rust gets it's expected pattern.
-  memset(&_bss, 0, (size_t) &_bss_len);
+  memset(&_bss, 0, (size_t) ((void *)&_ebss - (void *)&_bss));
 
   // formerly known as 'os_boot()'
   try_context_set(NULL);
