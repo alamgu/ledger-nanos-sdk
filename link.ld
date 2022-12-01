@@ -22,6 +22,7 @@ SECTIONS
     *(.boot*)
     *(.text*)
     /* .rodata is moved out so we can update it */
+    . = ALIGN(PAGE_SIZE);
 
     _etext = .;
   } > FLASH :flash0
@@ -53,9 +54,11 @@ SECTIONS
   {
     /* Moved here from .text so we can permantly apply relocations to it with
        nvm_write() */
+    . = ALIGN(PAGE_SIZE);
     _rodata = .;
     _rodata_src = .;
     *(.rodata*)
+    /**(.rodata*)*/
     . = ALIGN(PAGE_SIZE);
     _erodata = .;
   } > FLASH :flash0
@@ -71,7 +74,7 @@ SECTIONS
     _edata = .;
     FILL(0xa4a4);
   } > SRAM AT> FLASH :data =0xa4a4
-  _data_len = _edata - _data;
+  _data_len = SIZEOF(.data); /* _edata - _data; */
 
   /* Persistent data, read and written during app running proper,
      relocations are also needed. */
@@ -126,6 +129,11 @@ SECTIONS
   } :NONE
   */
 
+  /*.text.debug_info (INFO):
+  {
+	  *(.text.debug_info)
+  }*/
+
   /DISCARD/ :
   {
     libc.a ( * )
@@ -133,7 +141,9 @@ SECTIONS
     libgcc.a ( * )
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
     *(.ARM.extab*)
-    /* *(.debug_info) */
+    /* *(.rel.debug_info)
+    *(.rela.debug_info) */
+    *(.debug_info)
   }
 }
 

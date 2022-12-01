@@ -22,12 +22,18 @@ struct SectionLen;
 
 extern struct SectionDst _rodata;
 extern struct SectionSrc _rodata_src;
+extern struct SectionDst _erodata;
 extern struct SectionLen _rodata_len;
 
 extern struct SectionDst _data;
+extern struct SectionDst _edata;
 extern struct SectionLen _data_len;
+const struct SectionLen* _data_len_value = &_data_len;
+
 extern struct SectionDst _sidata;
+const struct SectionLen* _sidata_value = &_sidata;
 extern struct SectionSrc _sidata_src;
+const struct SectionLen* _sidata_src_value = &_sidata_src;
 
 extern struct SectionDst _nvm_data;
 extern struct SectionSrc _nvm_data_src;
@@ -45,20 +51,48 @@ extern Elf32_Rel _erelocs;
 void *pic(void *link_address);
 void nvm_write (void *dst_adr, void *src_adr, unsigned int src_len);
 
+#ifdef SPECULOS_DEBUGGING
+#define PRINTLNC(str) println_c(str)
+void println_c(char* str);
+#define PRINTHEXC(str, n) printhex_c(str, n)
+void printhex_c(char* str, uint32_t m);
+#else
+#define PRINTLNC(str) while(0)
+#define PRINTHEXC(str, n) while(0)
+#endif
+
+
+#define SYMBOL_ABSOLUTE_VALUE(DST, SYM) __asm volatile("movw %[result], #:lower16:" #SYM "\n\t" "movt %[result], #:upper16:" #SYM : [result] "=r" (DST))
+
+#ifdef TARGET_NANOS
+#define SYMBOL_SBREL_ADDRESS(DST, SYM) SYMBOL_ABSOLUTE_VALUE(DST, SYM)
+#else
+#define SYMBOL_SBREL_ADDRESS(DST, SYM) __asm volatile("movw %[result], #:lower16:" #SYM "(sbrel)\n\t" "movt %[result], #:upper16:" #SYM "(sbrel)\n\t" "add %[result],r9,%[result]" : [result] "=r" (DST))
+#endif
+
 void link_pass(
 	struct SectionLen *sec_len_as_p,
 	struct SectionSrc *sec_src,
-	struct SectionDst *sec_dst)
+	struct SectionDst *sec_dst,
+	int dst_ram)
 {
-	uint32_t buf[16];
+	uint32_t buf[128];
 	typedef typeof(*buf) link_addr_t;
 	typedef typeof(*buf) install_addr_t;
 
-	Elf32_Rel *reloc_start = pic(&_relocs);
-	Elf32_Rel *reloc_end = ((Elf32_Rel*)pic(&_erelocs-1)) + 1;
+	Elf32_Rel* relocs;
+	SYMBOL_ABSOLUTE_VALUE(relocs, _relocs);
+	Elf32_Rel* erelocs;
+	SYMBOL_ABSOLUTE_VALUE(erelocs, _erelocs);
 
-    size_t sec_len = (size_t)sec_len_as_p;
 
+	Elf32_Rel *reloc_start = pic(relocs);
+	Elf32_Rel *reloc_end = ((Elf32_Rel*)pic(erelocs-1)) + 1;
+
+	size_t sec_len = (size_t)sec_len_as_p;
+
+	PRINTHEXC("Section base address:", sec_dst);
+	PRINTHEXC("Section base address runtime:", pic(sec_dst));
 	// Loop over pages of the .rodata section,
 	for (size_t i = 0; i < sec_len; i += sizeof(buf)) {
 		// We will want to know if we changed each page, to avoid extra write-backs.
@@ -74,6 +108,9 @@ void link_pass(
 		// This is the elf load (*not* elf link or bolos run time!) address of the page
 		// we just copied.
 		link_addr_t page_link_addr = (link_addr_t)sec_dst + i;
+
+		PRINTHEXC("Chunk base: ", page_link_addr);
+		PRINTHEXC("First reloc: ", reloc_start->r_offset);
 
 		// Loop over the rodata entries - we could loop over the
 		// correct seciton, but this also works.
@@ -95,29 +132,55 @@ void link_pass(
 			// This includes word_offset < 0 because uint32_t.
 			// Assuming no relocations go behind the end address.
 			if (word_offset < sizeof(buf) / sizeof(*buf)) {
+				PRINTLNC("Possible reloc");
 				link_addr_t old = buf[word_offset];
 				install_addr_t new = pic(old);
 				is_changed |= (old != new);
 				buf[word_offset] = new;
 			}
 		}
-		if (is_changed) {
-			nvm_write(pic((void *)sec_dst + i), buf, 64);
+		if (dst_ram) {
+			PRINTLNC("Chunk to ram");
+			memcpy((void*)sec_dst + i, buf, 512);
+		} else if (is_changed) {
+			PRINTLNC("Chunk to flash");
+			nvm_write(pic((void *)sec_dst + i), buf, 512);
+		} else {
+			PRINTLNC("Unchanged flash chunk");
 		}
 	}
+
+	/* PRINTLNC("Ending link pass"); */
 }
 
 int c_main(void) {
   __asm volatile("cpsie i");
 
   // Update pointers for pic(), only issuing nvm_write() if we actually changed a pointer in the block.
-  link_pass(&_rodata_len, &_rodata_src, &_rodata);
-  link_pass(&_data_len, &_sidata_src, &_sidata);
-  link_pass(&_nvm_data_len, &_nvm_data_src, &_nvm_data);
-  // Yes, the length is the _address_ of _data_len, becuase it's the definition of the symbol at link time.
-  memcpy(&_data, pic(&_sidata), (size_t) &_data_len);
-  // Also clear the bss section to zeroes, so rust gets it's expected pattern.
-  memset(&_bss, 0, (size_t) &_bss_len);
+  // link_pass(&_rodata_len, &_rodata_src, &_rodata);
+  size_t rodata_len;
+  SYMBOL_ABSOLUTE_VALUE(rodata_len, _rodata_len);
+  void* rodata_src;
+  SYMBOL_ABSOLUTE_VALUE(rodata_src, _rodata_src);
+  void* rodata;
+  SYMBOL_ABSOLUTE_VALUE(rodata, _rodata);
+
+  link_pass(rodata_len, rodata_src, rodata, 0);
+
+  size_t data_len;
+  SYMBOL_ABSOLUTE_VALUE(data_len, _data_len);
+  void* sidata_src;
+  SYMBOL_ABSOLUTE_VALUE(sidata_src, _sidata_src);
+  void* data;
+  __asm volatile("mov %[result],r9" : [result] "=r" (data));
+
+  link_pass(data_len, sidata_src, data, 1);
+
+  size_t bss_len;
+  SYMBOL_ABSOLUTE_VALUE(bss_len, _bss_len);
+  void* bss;
+  SYMBOL_SBREL_ADDRESS(bss, _bss);
+  memset(bss, 0, bss_len);
 
   // formerly known as 'os_boot()'
   try_context_set(NULL);
