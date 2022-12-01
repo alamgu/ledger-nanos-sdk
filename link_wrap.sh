@@ -5,7 +5,7 @@ set -eu
 LD=${LD:-rust-lld}
 # Needed because LLD gets behavior from argv[0]
 LD=${LD/-ld/-lld}
-${LD} "$@"
+${LD} "$@" --emit-relocs
 
 echo RUST_LLD DONE
 
