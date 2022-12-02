@@ -61,7 +61,7 @@ void printhex_c(char* str, uint32_t m);
 #elif defined(TARGET_NANOX)
 # define SYMBOL_SBREL_ADDRESS(DST, SYM) \
 	__asm volatile( \
-		"ldr %[result], =" #SYM "\n\t" \
+		"ldr %[result], =" #SYM "(sbrel)\n\t" \
 		"add %[result], r9, %[result]" \
 		: [result] "=r" (DST))
 #elif defined(TARGET_NANOS)
