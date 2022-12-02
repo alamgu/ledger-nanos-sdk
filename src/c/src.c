@@ -18,29 +18,6 @@ void os_longjmp(unsigned int exception) {
 
 struct SectionSrc;
 struct SectionDst;
-struct SectionLen;
-
-extern struct SectionDst _rodata;
-extern struct SectionSrc _rodata_src;
-extern struct SectionDst _erodata;
-extern struct SectionLen _rodata_len;
-
-extern struct SectionDst _data;
-extern struct SectionDst _edata;
-extern struct SectionLen _data_len;
-const struct SectionLen* _data_len_value = &_data_len;
-
-extern struct SectionDst _sidata;
-const struct SectionLen* _sidata_value = &_sidata;
-extern struct SectionSrc _sidata_src;
-const struct SectionLen* _sidata_src_value = &_sidata_src;
-
-extern struct SectionDst _nvm_data;
-extern struct SectionSrc _nvm_data_src;
-extern struct SectionLen _nvm_data_len;
-
-extern struct SectionDst _bss;
-extern struct SectionLen _bss_len;
 
 io_seph_app_t G_io_app;
 
@@ -61,17 +38,41 @@ void printhex_c(char* str, uint32_t m);
 #define PRINTHEXC(str, n) while(0)
 #endif
 
+#ifdef TARGET_NANOS2 // ARM v8
+# define SYMBOL_ABSOLUTE_VALUE(DST, SYM) \
+	__asm volatile( \
+		"movw %[result], #:lower16:" #SYM "\n\t" \
+		"movt %[result], #:upper16:" #SYM \
+		: [result] "=r" (DST))
+#else // ARM v6
+# define SYMBOL_ABSOLUTE_VALUE(DST, SYM) \
+	__asm volatile( \
+		"ldr %[result], =" #SYM \
+		: [result] "=r" (DST))
+#endif
 
-#define SYMBOL_ABSOLUTE_VALUE(DST, SYM) __asm volatile("movw %[result], #:lower16:" #SYM "\n\t" "movt %[result], #:upper16:" #SYM : [result] "=r" (DST))
-
-#ifdef TARGET_NANOS
-#define SYMBOL_SBREL_ADDRESS(DST, SYM) SYMBOL_ABSOLUTE_VALUE(DST, SYM)
+#ifdef TARGET_NANOS2
+# define SYMBOL_SBREL_ADDRESS(DST, SYM) \
+	__asm volatile( \
+		"movw %[result], #:lower16:" #SYM "(sbrel)\n\t" \
+		"movt %[result], #:upper16:" #SYM "(sbrel)\n\t" \
+		"add %[result], r9, %[result]" \
+		: [result] "=r" (DST))
+#elif defined(TARGET_NANOX)
+# define SYMBOL_SBREL_ADDRESS(DST, SYM) \
+	__asm volatile( \
+		"ldr %[result], =" #SYM "\n\t" \
+		"add %[result], r9, %[result]" \
+		: [result] "=r" (DST))
+#elif defined(TARGET_NANOS)
+# define SYMBOL_SBREL_ADDRESS(DST, SYM) \
+	SYMBOL_ABSOLUTE_VALUE(DST, SYM)
 #else
-#define SYMBOL_SBREL_ADDRESS(DST, SYM) __asm volatile("movw %[result], #:lower16:" #SYM "(sbrel)\n\t" "movt %[result], #:upper16:" #SYM "(sbrel)\n\t" "add %[result],r9,%[result]" : [result] "=r" (DST))
+# error "unknown machine"
 #endif
 
 void link_pass(
-	struct SectionLen *sec_len_as_p,
+	size_t sec_len,
 	struct SectionSrc *sec_src,
 	struct SectionDst *sec_dst,
 	int dst_ram)
@@ -88,8 +89,6 @@ void link_pass(
 
 	Elf32_Rel *reloc_start = pic(relocs);
 	Elf32_Rel *reloc_end = ((Elf32_Rel*)pic(erelocs-1)) + 1;
-
-	size_t sec_len = (size_t)sec_len_as_p;
 
 	PRINTHEXC("Section base address:", sec_dst);
 	PRINTHEXC("Section base address runtime:", pic(sec_dst));
@@ -160,25 +159,25 @@ int c_main(void) {
   // link_pass(&_rodata_len, &_rodata_src, &_rodata);
   size_t rodata_len;
   SYMBOL_ABSOLUTE_VALUE(rodata_len, _rodata_len);
-  void* rodata_src;
+  struct SectionSrc* rodata_src;
   SYMBOL_ABSOLUTE_VALUE(rodata_src, _rodata_src);
-  void* rodata;
+  struct SectionDst* rodata;
   SYMBOL_ABSOLUTE_VALUE(rodata, _rodata);
 
   link_pass(rodata_len, rodata_src, rodata, 0);
 
   size_t data_len;
   SYMBOL_ABSOLUTE_VALUE(data_len, _data_len);
-  void* sidata_src;
+  struct SectionSrc* sidata_src;
   SYMBOL_ABSOLUTE_VALUE(sidata_src, _sidata_src);
-  void* data;
+  struct SectionDst* data;
   __asm volatile("mov %[result],r9" : [result] "=r" (data));
 
   link_pass(data_len, sidata_src, data, 1);
 
   size_t bss_len;
   SYMBOL_ABSOLUTE_VALUE(bss_len, _bss_len);
-  void* bss;
+  struct SectionDst* bss;
   SYMBOL_SBREL_ADDRESS(bss, _bss);
   memset(bss, 0, bss_len);
 
