@@ -88,6 +88,10 @@ SECTIONS
     . = ALIGN(PAGE_SIZE);
     _envm_data = .;
 
+    /* Debugging: Add some extra buffer space just to make sure we don't cloober install_parameters */
+    . += PAGE_SIZE*4;
+    /* and make sure we're on a page boundary for them */
+    . = ALIGN(PAGE_SIZE);
     _install_parameters = .;
 
     /* After this section we no longer have Flash memory at all. */

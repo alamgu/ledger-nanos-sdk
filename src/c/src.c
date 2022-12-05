@@ -77,7 +77,12 @@ void link_pass(
 	struct SectionDst *sec_dst,
 	int dst_ram)
 {
+#ifdef TARGET_NANOS
+	uint32_t buf[16];
+#else
 	uint32_t buf[128];
+#endif
+
 	typedef typeof(*buf) link_addr_t;
 	typedef typeof(*buf) install_addr_t;
 
@@ -143,7 +148,11 @@ void link_pass(
 			memcpy((void*)sec_dst + i, buf, 512);
 		} else if (is_changed) {
 			PRINTLNC("Chunk to flash");
-			nvm_write(pic((void *)sec_dst + i), buf, 512);
+			nvm_write(pic((void *)sec_dst + i), buf, sizeof(buf));
+			if (memcmp(pic((void *)sec_dst + i), buf, sizeof(buf))) {
+				try_context_set(NULL);
+				os_sched_exit(1);
+			}
 		} else {
 			PRINTLNC("Unchanged flash chunk");
 		}
