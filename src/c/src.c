@@ -145,11 +145,11 @@ void link_pass(
 		}
 		if (dst_ram) {
 			PRINTLNC("Chunk to ram");
-			memcpy((void*)sec_dst + i, buf, 512);
+			memcpy((void*)sec_dst + i, buf, buf_size);
 		} else if (is_changed) {
 			PRINTLNC("Chunk to flash");
-			nvm_write(pic((void *)sec_dst + i), buf, sizeof(buf));
-			if (memcmp(pic((void *)sec_dst + i), buf, sizeof(buf))) {
+			nvm_write(pic((void *)sec_dst + i), buf, buf_size);
+			if (memcmp(pic((void *)sec_dst + i), buf, buf_size)) {
 				try_context_set(NULL);
 				os_sched_exit(1);
 			}
