@@ -3,6 +3,9 @@
 use crate::bindings::*;
 use crate::usbbindings::*;
 
+#[cfg(target_os = "nanox")]
+use crate::ble;
+
 #[repr(u8)]
 pub enum SephTags {
     ScreenDisplayStatus = SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS as u8,
@@ -22,6 +25,7 @@ pub enum Events {
     TickerEvent = SEPROXYHAL_TAG_TICKER_EVENT as u8,
     ButtonPush = SEPROXYHAL_TAG_BUTTON_PUSH_EVENT as u8,
     DisplayProcessed = SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT as u8,
+    BleReceive = SEPROXYHAL_TAG_BLE_RECV_EVENT as u8,
     Unknown = 0xff,
 }
 #[repr(u8)]
@@ -57,6 +61,7 @@ impl From<u8> for Events {
             SEPROXYHAL_TAG_TICKER_EVENT => Events::TickerEvent,
             SEPROXYHAL_TAG_BUTTON_PUSH_EVENT => Events::ButtonPush,
             SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT => Events::DisplayProcessed,
+            SEPROXYHAL_TAG_BLE_RECV_EVENT => Events::BleReceive,
             _ => Events::Unknown,
         }
     }
@@ -227,7 +232,7 @@ pub fn handle_capdu_event(apdu_buffer: &mut [u8], buffer: &[u8]) {
     }
 }
 
-pub fn handle_event(mut apdu_buffer: &mut [u8], spi_buffer: &[u8]) {
+pub fn handle_event(apdu_buffer: &mut [u8], spi_buffer: &[u8]) {
     let len = u16::from_be_bytes([spi_buffer[1], spi_buffer[2]]);
     match Events::from(spi_buffer[0]) {
         Events::USBEvent => {
@@ -237,10 +242,12 @@ pub fn handle_event(mut apdu_buffer: &mut [u8], spi_buffer: &[u8]) {
         }
         Events::USBXFEREvent => {
             if len >= 3 {
-                handle_usb_ep_xfer_event(&mut apdu_buffer, spi_buffer);
+                handle_usb_ep_xfer_event(apdu_buffer, spi_buffer);
             }
         }
-        Events::CAPDUEvent => handle_capdu_event(&mut apdu_buffer, spi_buffer),
+        #[cfg(target_os = "nanox")]
+        Events::BleReceive => ble::receive(apdu_buffer, spi_buffer),
+        Events::CAPDUEvent => handle_capdu_event(apdu_buffer, spi_buffer),
         Events::TickerEvent => { /* unsafe{ G_io_app.ms += 100; } */ }
         _ => (),
     }
