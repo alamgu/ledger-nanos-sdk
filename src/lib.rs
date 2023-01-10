@@ -5,6 +5,7 @@
 #![test_runner(sdk_test_runner)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
+#![feature(core_ffi_c)]
 
 pub mod bindings;
 
