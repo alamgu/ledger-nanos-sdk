@@ -11,16 +11,15 @@ fn finalize_nanos_configuration(command: &mut cc::Build, bolos_sdk: &String) -> 
         .define("TARGET_ID", Some("0x31100004"))
         .define("BAGL_HEIGHT", Some("32"))
         .define("BAGL_WIDTH", Some("128"))
-        .file(format!("{}/nanos/syscalls.c", bolos_sdk))
-        .file(format!("{}/nanos/cx_stubs.S", bolos_sdk))
+        .file(format!("{bolos_sdk}/nanos/syscalls.c"))
+        .file(format!("{bolos_sdk}/nanos/cx_stubs.S"))
         .file(format!(
-            "{}/nanos/lib_cxng/src/cx_exported_functions.c",
-            bolos_sdk
+            "{bolos_sdk}/nanos/lib_cxng/src/cx_exported_functions.c"
         ))
-        .include(format!("{}/nanos/", bolos_sdk))
-        .include(format!("{}/nanos/lib_cxng/include", bolos_sdk))
+        .include(format!("{bolos_sdk}/nanos/"))
+        .include(format!("{bolos_sdk}/nanos/lib_cxng/include"))
         .flag("-fropi");
-    format!("{}/nanos/Makefile.conf.cx", bolos_sdk)
+    format!("{bolos_sdk}/nanos/Makefile.conf.cx")
 }
 
 fn finalize_nanox_configuration(command: &mut cc::Build, bolos_sdk: &String) -> String {
@@ -38,50 +37,43 @@ fn finalize_nanox_configuration(command: &mut cc::Build, bolos_sdk: &String) -> 
         .define("HAVE_MCU_SERIAL_STORAGE", None)
         .define("HAVE_BLE", None)
         .define("HAVE_BLE_APDU", None)
-        .file(format!("{}/nanox/ledger_protocol.c", bolos_sdk))
+        .file(format!("{bolos_sdk}/nanox/ledger_protocol.c"))
         .file(format!(
-            "{}/nanox/lib_blewbxx/core/auto/ble_gap_aci.c",
-            bolos_sdk
+            "{bolos_sdk}/nanox/lib_blewbxx/core/auto/ble_gap_aci.c"
         ))
         .file(format!(
-            "{}/nanox/lib_blewbxx/core/auto/ble_gatt_aci.c",
-            bolos_sdk
+            "{bolos_sdk}/nanox/lib_blewbxx/core/auto/ble_gatt_aci.c"
         ))
         .file(format!(
-            "{}/nanox/lib_blewbxx/core/auto/ble_hal_aci.c",
-            bolos_sdk
+            "{bolos_sdk}/nanox/lib_blewbxx/core/auto/ble_hal_aci.c"
         ))
         .file(format!(
-            "{}/nanox/lib_blewbxx/core/auto/ble_hci_le.c",
-            bolos_sdk
+            "{bolos_sdk}/nanox/lib_blewbxx/core/auto/ble_hci_le.c"
         ))
         .file(format!(
-            "{}/nanox/lib_blewbxx/core/template/osal.c",
-            bolos_sdk
+            "{bolos_sdk}/nanox/lib_blewbxx/core/template/osal.c"
         ))
         .file(format!(
-            "{}/nanox/lib_blewbxx_impl/src/ledger_ble.c",
-            bolos_sdk
+            "{bolos_sdk}/nanox/lib_blewbxx_impl/src/ledger_ble.c"
         ))
-        .include(format!("{}/nanox/lib_blewbxx/include", bolos_sdk))
-        .include(format!("{}/nanox/lib_blewbxx/core", bolos_sdk))
-        .include(format!("{}/nanox/lib_blewbxx/core/auto", bolos_sdk))
-        .include(format!("{}/nanox/lib_blewbxx/core/template", bolos_sdk))
-        .include(format!("{}/nanox/lib_blewbxx_impl/include", bolos_sdk))
-        .file(format!("{}/nanox/syscalls.c", bolos_sdk))
-        .file(format!("{}/nanox/cx_stubs.S", bolos_sdk))
+        .include(format!("{bolos_sdk}/nanox/lib_blewbxx/include"))
+        .include(format!("{bolos_sdk}/nanox/lib_blewbxx/core"))
+        .include(format!("{bolos_sdk}/nanox/lib_blewbxx/core/auto"))
+        .include(format!("{bolos_sdk}/nanox/lib_blewbxx/core/template"))
+        .include(format!("{bolos_sdk}/nanox/lib_blewbxx_impl/include"))
+        .file(format!("{bolos_sdk}/nanox/syscalls.c"))
+        .file(format!("{bolos_sdk}/nanox/cx_stubs.S"))
         .file(format!(
-            "{}/nanox/lib_cxng/src/cx_exported_functions.c",
-            bolos_sdk
+            "{bolos_sdk}/nanox/lib_cxng/src/cx_exported_functions.c"
         ))
-        .include(format!("{}/nanox/", bolos_sdk))
-        .include(format!("{}/nanox/lib_cxng/include", bolos_sdk))
+        .include(format!("{bolos_sdk}/nanox/"))
+        .include(format!("{bolos_sdk}/nanox/lib_cxng/include"))
         .flag("-mno-movt")
         .flag("-ffixed-r9")
         .flag("-fropi")
         .flag("-frwpi");
     configure_lib_bagl(command, bolos_sdk);
-    format!("{}/nanox/Makefile.conf.cx", bolos_sdk)
+    format!("{bolos_sdk}/nanox/Makefile.conf.cx")
 }
 
 fn finalize_nanosplus_configuration(command: &mut cc::Build, bolos_sdk: &String) -> String {
@@ -95,18 +87,17 @@ fn finalize_nanosplus_configuration(command: &mut cc::Build, bolos_sdk: &String)
         .define("HAVE_SE_BUTTON", None)
         .define("HAVE_SE_SCREEN", None)
         .define("HAVE_MCU_SERIAL_STORAGE", None)
-        .file(format!("{}/nanosplus/syscalls.c", bolos_sdk))
-        .file(format!("{}/nanosplus/cx_stubs.S", bolos_sdk))
+        .file(format!("{bolos_sdk}/nanosplus/syscalls.c"))
+        .file(format!("{bolos_sdk}/nanosplus/cx_stubs.S"))
         .file(format!(
-            "{}/nanosplus/lib_cxng/src/cx_exported_functions.c",
-            bolos_sdk
+            "{bolos_sdk}/nanosplus/lib_cxng/src/cx_exported_functions.c"
         ))
-        .include(format!("{}/nanosplus/", bolos_sdk))
-        .include(format!("{}/nanosplus/lib_cxng/include", bolos_sdk))
+        .include(format!("{bolos_sdk}/nanosplus/"))
+        .include(format!("{bolos_sdk}/nanosplus/lib_cxng/include"))
         .flag("-fropi")
         .flag("-frwpi");
     configure_lib_bagl(command, bolos_sdk);
-    format!("{}/nanosplus/Makefile.conf.cx", bolos_sdk)
+    format!("{bolos_sdk}/nanosplus/Makefile.conf.cx")
 }
 
 fn configure_lib_bagl(command: &mut cc::Build, bolos_sdk: &String) {
@@ -141,10 +132,10 @@ fn configure_lib_bagl(command: &mut cc::Build, bolos_sdk: &String) {
             .define("HAVE_BAGL_GLYPH_ICON_CROSS_BADGE", None)
             .define("HAVE_BAGL_GLYPH_ICON_TRANSACTION_BADGE", None)
             .define("HAVE_BAGL_GLYPH_ICON_EYE_BADGE", None)
-            .include(format!("{}/lib_bagl/src/", bolos_sdk))
-            .file(format!("{}/lib_bagl/src/bagl.c", bolos_sdk))
-            .file(format!("{}/lib_bagl/src/bagl_fonts.c", bolos_sdk))
-            .file(format!("{}/lib_bagl/src/bagl_glyphs.c", bolos_sdk));
+            .include(format!("{bolos_sdk}/lib_bagl/src/"))
+            .file(format!("{bolos_sdk}/lib_bagl/src/bagl.c"))
+            .file(format!("{bolos_sdk}/lib_bagl/src/bagl_fonts.c"))
+            .file(format!("{bolos_sdk}/lib_bagl/src/bagl_glyphs.c"));
     }
 }
 
@@ -153,15 +144,18 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let output = Command::new("arm-none-eabi-gcc")
         .arg("-print-sysroot")
-        .output().ok();
+        .output()
+        .ok();
     let sysroot = output
-        .as_ref().and_then(|o|std::str::from_utf8(&o.stdout).ok())
-        .unwrap_or("").trim();
+        .as_ref()
+        .and_then(|o| std::str::from_utf8(&o.stdout).ok())
+        .unwrap_or("")
+        .trim();
 
     let gcc_toolchain = if sysroot.is_empty() {
         String::from("/usr/include/")
     } else {
-        format!("{}/include", sysroot)
+        format!("{sysroot}/include")
     };
 
     let mut command = cc::Build::new();
@@ -174,29 +168,25 @@ fn main() -> Result<(), Box<dyn Error>> {
     command
         .file("./src/c/src.c")
         .file("./src/c/sjlj.s")
-        .file(format!("{}/src/os_io_usb.c", bolos_sdk))
-        .file(format!("{}/src/pic.c", bolos_sdk))
-        .file(format!("{}/src/checks.c", bolos_sdk))
-        .file(format!("{}/src/os.c", bolos_sdk))
-        .file(format!("{}/src/svc_call.s", bolos_sdk))
-        .file(format!("{}/src/svc_cx_call.s", bolos_sdk))
-        .file(format!("{}/lib_stusb/usbd_conf.c", bolos_sdk))
+        .file(format!("{bolos_sdk}/src/os_io_usb.c"))
+        .file(format!("{bolos_sdk}/src/pic.c"))
+        .file(format!("{bolos_sdk}/src/checks.c"))
+        .file(format!("{bolos_sdk}/src/os.c"))
+        .file(format!("{bolos_sdk}/src/svc_call.s"))
+        .file(format!("{bolos_sdk}/src/svc_cx_call.s"))
+        .file(format!("{bolos_sdk}/lib_stusb/usbd_conf.c"))
         .file(format!(
-            "{}/lib_stusb/STM32_USB_Device_Library/Core/Src/usbd_core.c",
-            bolos_sdk
+            "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Core/Src/usbd_core.c"
         ))
         .file(format!(
-            "{}/lib_stusb/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c",
-            bolos_sdk
+            "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c"
         ))
         .file(format!(
-            "{}/lib_stusb/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c",
-            bolos_sdk
+            "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c"
         ))
-        .file(format!("{}/lib_stusb_impl/usbd_impl.c", bolos_sdk))
+        .file(format!("{bolos_sdk}/lib_stusb_impl/usbd_impl.c"))
         .file(format!(
-            "{}/lib_stusb/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c",
-            bolos_sdk
+            "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c"
         ))
         .define("HAVE_LOCAL_APDU_BUFFER", None)
         .define("IO_HID_EP_LENGTH", Some("64"))
@@ -205,19 +195,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         .define("HAVE_IO_USB", None)
         .define("HAVE_L4_USBLIB", None)
         .define("HAVE_USB_APDU", None)
+        .define("__IO", Some("volatile"))
         .define("IO_USB_MAX_ENDPOINTS", Some("6"))
         .define("IO_SEPROXYHAL_BUFFER_SIZE_B", Some("128"))
         .include(gcc_toolchain)
-        .include(format!("{}/include", bolos_sdk))
-        .include(format!("{}/lib_stusb", bolos_sdk))
-        .include(format!("{}/lib_stusb_impl", bolos_sdk))
+        .include(format!("{bolos_sdk}/include"))
+        .include(format!("{bolos_sdk}/lib_stusb"))
+        .include(format!("{bolos_sdk}/lib_stusb_impl"))
         .include(format!(
-            "{}/lib_stusb/STM32_USB_Device_Library/Core/Inc",
-            bolos_sdk
+            "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Core/Inc"
         ))
         .include(format!(
-            "{}/lib_stusb/STM32_USB_Device_Library/Class/HID/Inc",
-            bolos_sdk
+            "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/HID/Inc"
         ))
         .debug(true)
         .flag("-Oz")
@@ -230,6 +219,50 @@ fn main() -> Result<(), Box<dyn Error>> {
         .flag("-fshort-enums")
         .flag("-mno-unaligned-access")
         .flag("-Wno-unused-command-line-argument");
+
+    #[cfg(feature = "ccid")]
+    {
+        command = command
+            .file(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/src/usbd_ccid_cmd.c"
+            ))
+            .file(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/src/usbd_ccid_core.c"
+            ))
+            .file(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/src/usbd_ccid_if.c"
+            ))
+            .file(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/src/usbd_ccid_cmd.c"
+            ))
+            .file(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/src/usbd_ccid_core.c"
+            ))
+            .file(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/src/usbd_ccid_if.c"
+            ))
+            .file(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/src/usbd_ccid_cmd.c"
+            ))
+            .file(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/src/usbd_ccid_core.c"
+            ))
+            .file(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/src/usbd_ccid_if.c"
+            ))
+            .define("HAVE_USB_CLASS_CCID", None)
+            .define("HAVE_CCID", None)
+            .include(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/inc"
+            ))
+            .include(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/inc"
+            ))
+            .include(format!(
+                "{bolos_sdk}/lib_stusb/STM32_USB_Device_Library/Class/CCID/inc"
+            ))
+            .clone();
+    }
 
     enum Device {
         NanoS,
@@ -244,8 +277,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         "nanosplus" => NanoSPlus,
         "nanox" => NanoX,
         target_name => panic!(
-            "invalid target `{}`, expected one of `nanos`, `nanox`, `nanosplus`. Run with `-Z build-std=core --target=./<target name>.json`",
-            target_name
+            "invalid target `{target_name}`, expected one of `nanos`, `nanox`, `nanosplus`. Run with `-Z build-std=core --target=./<target name>.json`"
         ),
     };
 
@@ -268,11 +300,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     makefile.read_to_string(&mut content).unwrap();
     // Extract the defines from the Makefile.conf.cx.
     // They all begin with `HAVE` and are ' ' and '\n' separated.
-    let defines = content
+    let mut defines = content
         .split('\n')
         .filter(|line| !line.starts_with('#')) // Remove lines that are commented
         .flat_map(|line| line.split(' ').filter(|word| word.starts_with("HAVE")))
         .collect::<Vec<&str>>();
+
+    // do not forget NATIVE_LITTLE_ENDIAN
+    let s = String::from("NATIVE_LITTLE_ENDIAN");
+    defines.push(s.as_str());
 
     // Add the defines found in the Makefile.conf.cx to our build command.
     for define in defines {
