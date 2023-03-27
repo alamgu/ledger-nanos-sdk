@@ -6,8 +6,8 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![cfg_attr(test, feature(asm_const))]
-#![cfg_attr(test, feature(cfg_version))]
 #![feature(cfg_version)]
+#![cfg_attr(not(version("1.64")), feature(array_from_fn))]
 #![cfg_attr(not(version("1.64")), feature(core_ffi_c))]
 #![cfg_attr(not(version("1.66")), feature(bench_black_box))]
 
