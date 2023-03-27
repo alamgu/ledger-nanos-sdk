@@ -378,7 +378,7 @@ impl Comm {
     /// Return APDU Metadata
     pub fn get_apdu_metadata(&self) -> &ApduMeta {
         assert!(self.apdu_buffer.len() >= 4);
-        let ptr = self.apdu_buffer[0] as *const u8 as *const ApduMeta;
+        let ptr = &self.apdu_buffer[0] as &u8 as *const u8 as *const ApduMeta;
         unsafe { &*ptr }
     }
 
