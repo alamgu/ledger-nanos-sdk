@@ -85,6 +85,14 @@ SECTIONS
     _nvm_data = .;
     _nvm_data_src = .;
     *(.nvm_data*)
+
+    /* Store _nvram value during link_pass and use this to detect movement of
+    _nvram as compared to the previous app execution, and redo the relocations
+    if necessary */
+    . = ALIGN(4);
+    _nvram_prev_run = .;
+    LONG(ABSOLUTE(_nvram_start))
+
     . = ALIGN(PAGE_SIZE);
     _envm_data = .;
 
