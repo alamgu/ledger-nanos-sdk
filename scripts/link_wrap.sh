@@ -26,18 +26,15 @@ ${OBJCOPY} --dump-section .rel.data=$OUT-data-reloc $OUT /dev/null || true
 ${OBJCOPY} --dump-section .rel.nvm_data=$OUT-nvm-reloc $OUT /dev/null || true
 # Concatenate the relocation sections; this should still write $OUT-relocs even if $OUT-data-reloc doesn't exist.
 cat $OUT-rodata-reloc $OUT-nvm-reloc $OUT-data-reloc > $OUT-relocs || true
-# pad the relocs out to size - we should probably make some way to adjust this size from the source.
 
 reloc_allocated_size="$((0x$(${NM} $OUT | grep _reloc_size | cut -d' ' -f1)))"
 reloc_real_size="$(stat --format %s $OUT-relocs)"
 # Check that our relocations _actually_ fit.
 if [ "$reloc_real_size" -gt "$reloc_allocated_size" ]
 then
-	echo "Insufficient size for relocs; increase it in build.rs."
+	echo "Insufficient size for relocs; This is likely some bug in nanos_sdk's link.ld."
 	echo "Available size: " $reloc_allocated_size " Used size: " $reloc_real_size
 	exit 1
-else
-	echo "Sufficient size:" $reloc_allocated_size $reloc_real_size
 fi
 
 truncate -s $reloc_allocated_size $OUT-relocs

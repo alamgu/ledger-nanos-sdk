@@ -30,11 +30,11 @@ SECTIONS
 
   /* Relocations, read only, no relocations aginst the relocations themselves
      needed! */
+  _reloc_size = SIZEOF(.rel.rodata) + SIZEOF(.rel.data) + SIZEOF(.rel.nvm_data);
   .rel_flash : ALIGN(PAGE_SIZE)
   {
     _relocs = .;
 
-    /* define _reloc_size in the build.rs */
     . += _reloc_size;
     /*(.rel.rodata .rel.rodata*)*/
     /*(.rel.data .rel.data*)*/
