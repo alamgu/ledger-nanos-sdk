@@ -20,6 +20,7 @@ pub mod buttons;
 #[cfg(feature = "ccid")]
 pub mod ccid;
 pub mod ecc;
+pub mod infos;
 pub mod io;
 pub mod nvm;
 pub mod random;
