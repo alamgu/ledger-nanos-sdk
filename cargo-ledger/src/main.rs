@@ -248,7 +248,7 @@ fn build_app(
 
             exe_path
         }
-        Some(prebuilt) => prebuilt.canonicalize().unwrap(),
+        Some(prebuilt) => prebuilt,
     };
 
     let (this_pkg, metadata_ledger, metadata_device) =
