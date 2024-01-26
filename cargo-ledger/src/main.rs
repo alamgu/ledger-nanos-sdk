@@ -204,7 +204,7 @@ fn build_app(
             let mut args: Vec<String> = vec![];
             args.push(String::from("build"));
             args.push(String::from("--release"));
-            args.push(format!("--target={}", device.as_ref()));
+            args.push(format!("--target={}.json", device.as_ref()));
             args.push(String::from(
                 "--message-format=json-diagnostic-rendered-ansi",
             ));
