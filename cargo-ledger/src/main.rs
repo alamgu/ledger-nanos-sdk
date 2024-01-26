@@ -202,20 +202,6 @@ fn build_app(
             };
 
             let mut args: Vec<String> = vec![];
-            match std::env::var("RUST_NIGHTLY") {
-                Ok(version) => {
-                    println!("Use Rust nightly toolchain: {}", version);
-                    args.push(format!("+{}", version))
-                }
-                Err(_) => {
-                    let rustup_cmd =
-                        Command::new("rustup").arg("default").output().unwrap();
-                    println!(
-                        "Use Rust default toolchain: {}",
-                        from_utf8(rustup_cmd.stdout.as_slice()).unwrap()
-                    );
-                }
-            }
             args.push(String::from("build"));
             args.push(String::from("--release"));
             args.push(format!("--target={}", device.as_ref()));
