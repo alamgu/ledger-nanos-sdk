@@ -3,8 +3,8 @@ name = "testmacro"
 version = "0.1.0"
 authors = ["yhql <yhql@users.noreply.github.com>"]
 edition = "2018"
-license.workspace = true
-repository.workspace = true
+license = "Apache-2.0"
+repository = "https://github.com/LedgerHQ/ledger-device-rust-sdk"
 description = "procedural macro used to run unit and integration tests"
 
 [lib]
